@@ -37,9 +37,8 @@ left_motor.setVelocity(0.0)
 right_motor.setVelocity(0.0)
 
 # Main loop:
-endcount = 0
 # - perform simulation steps until Webots is stopping the controller
-while endcount!=10 and  robot.step(timestep) != -1:
+while robot.step(timestep) != -1:
     # Read the sensors:
     # Enter here functions to read sensor data, like:
     #  val = ds.getValue()
@@ -47,8 +46,6 @@ while endcount!=10 and  robot.step(timestep) != -1:
     light_vals = [light_sensor.getValue() for light_sensor in ls]
     print(prxmt_vals)
     print(light_vals) 
-    
-    endcount+=1
     # Process sensor data here.
 
     # Enter here functions to send actuator commands, like:
