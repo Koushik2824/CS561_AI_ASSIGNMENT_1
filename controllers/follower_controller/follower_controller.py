@@ -72,7 +72,7 @@ alpha = 0.25
 # These are taken from the reference above.
 WHEEL_RADIUS = 20.5/1000 # m
 AXLE_LENGTH =  52/1000 # m
-BASE_LINEAR_SPEED = 0.20 # m/s
+BASE_LINEAR_SPEED = 0.14 # m/s
 MAX_VELOCITY = 6.28 # rad/s
 
 # Gain factor, for magnifying the response due to angle change.
@@ -87,10 +87,12 @@ directions_of_motion_due_obstacle = [
           -(sensor_positions[i][1])) 
           for i in range(8)]
 
-# With the above comment's abstraction, we can treat light in pretty much the same way.
+# With the above comment's abstraction, we can treat light in pretty much the same way,
+# BUT the difference with Dark Knight comes in the fact that it should follow the light.
+# So if we sense light nearby we should try going in the direction of the sensor.
 directions_of_motion_due_light = [
-        (-(sensor_positions[i][0]), 
-         -(sensor_positions[i][1])) 
+        (+(sensor_positions[i][0]), 
+         +(sensor_positions[i][1])) 
     for i in range(8)]
 
 # The simulation loop

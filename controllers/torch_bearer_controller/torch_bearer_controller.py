@@ -25,14 +25,6 @@ for name in proximity_sensor_names:
     sensor.enable(timestep)
     proximity_sensors.append(sensor)
 
-# Initialize light sensors
-light_sensors = []
-light_sensor_names = ['ls0', 'ls1', 'ls2', 'ls3', 'ls4', 'ls5', 'ls6', 'ls7']
-for name in light_sensor_names:
-    sensor = robot.getDevice(name)
-    sensor.enable(timestep)
-    light_sensors.append(sensor)
-
 def normalizeVector(a: tuple) -> tuple:
     ''' Takes a two dimensional vector and returns a unit vector in the same direction.'''
     magnitude = ((a[0]**2 + a[1]**2)**0.5)
@@ -58,9 +50,7 @@ sensor_positions = [
 ]
 
 # The threshold value above which we say a obstacle is near and we would like to avoid it.
-PROXIMITY_THRESHOLD = 80.0  
-# The threshold value above which we say light is near and we would like to avoid it.
-LIGHT_THRESHOLD = 2500.0
+PROXIMITY_THRESHOLD = 80.0  # Adjust based on sensor readings
 
 # Starting value for the EWMA. (Exponentially weighted moving average)
 # We use EWMA for smoothing out the variations due to noise in the angle change calculations in the loop below.
@@ -87,59 +77,42 @@ directions_of_motion_due_obstacle = [
           -(sensor_positions[i][1])) 
           for i in range(8)]
 
-# With the above comment's abstraction, we can treat light in pretty much the same way.
-directions_of_motion_due_light = [
-        (-(sensor_positions[i][0]), 
-         -(sensor_positions[i][1])) 
-    for i in range(8)]
-
-# The simulation loop
+# The simulation loop.
 while robot.step(timestep) != -1:
-    # Read proximity and light sensor values.
+    
+    # Read proximity sensor values
     proximity_values = [sensor.getValue() for sensor in proximity_sensors]
-    
-    light_values = [(sensor.getValue()) for sensor in light_sensors]
-    
-    # If no obstacle or light detected, just move forward.
+   
+    # If nothing, just move forward.
     net_direction_due_obstacle_x = 0
     net_direction_due_obstacle_y = 1
-    net_direction_due_light_x = 0
-    net_direction_due_light_y = 0
-    
+   
     # Calculate the component of the resultant vector of the direction which reduces the chance of collision.
     for i in range(8):
        if proximity_values[i] > PROXIMITY_THRESHOLD:
            net_direction_due_obstacle_x += directions_of_motion_due_obstacle[i][0]
            net_direction_due_obstacle_y += directions_of_motion_due_obstacle[i][1] 
-       if light_values[i] < LIGHT_THRESHOLD:
-           net_direction_due_light_x += directions_of_motion_due_light[i][0]
-           net_direction_due_light_y += directions_of_motion_due_light[i][1]
        
-    # Collecting the computations above.
     net_direction_due_obstacle = (net_direction_due_obstacle_x,net_direction_due_obstacle_y)
-    net_direction_due_light = (net_direction_due_light_x,net_direction_due_light_y)
     
-    net_movement = (
-            net_direction_due_obstacle[0] + net_direction_due_light[0], 
-            net_direction_due_obstacle[1] + net_direction_due_light[1]
-             )
-
+    # Collecting the computations above.
+    net_movement = net_direction_due_obstacle
     net_movement = normalizeVector(net_movement)
-
+    
     # Calculate the required angle change.
     desired_angle = math.atan2(net_movement[0], net_movement[1])
-    
+
     # Magnify the change.
     angular_correction = Kp * desired_angle
     
     # EWMA 
     angular_correction = alpha*initial_ac + (1.0-alpha)*angular_correction
     initial_ac = angular_correction
-    
+
     # Calculating the speed of the wheels. The equations are taken from online references on basic physics.
-    right_wheel_speed = (BASE_LINEAR_SPEED / WHEEL_RADIUS) + ((AXLE_LENGTH / (2 * WHEEL_RADIUS)) * angular_correction)
-    left_wheel_speed  = (BASE_LINEAR_SPEED / WHEEL_RADIUS) - ((AXLE_LENGTH / (2 * WHEEL_RADIUS)) * angular_correction)
+    right_wheel_speed = (BASE_LINEAR_SPEED / WHEEL_RADIUS) + ((AXLE_LENGTH / (2 * WHEEL_RADIUS)) * (angular_correction))
+    left_wheel_speed  = (BASE_LINEAR_SPEED / WHEEL_RADIUS) - ((AXLE_LENGTH / (2 * WHEEL_RADIUS)) * (angular_correction))
     
-    # Set the wheel speeds.
+    # Set the wheel speeds
     right_motor.setVelocity(min(max(right_wheel_speed,-MAX_VELOCITY),MAX_VELOCITY))
     left_motor.setVelocity(min(max(left_wheel_speed,-MAX_VELOCITY),MAX_VELOCITY))
